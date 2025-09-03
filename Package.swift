@@ -16,13 +16,18 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "OMSDKFramework",
-            path: "Frameworks/OMSDK_Loblawca.xcframework"
+            path: "Frameworks/OMSDK-Static_Loblawca.xcframework"
         ),
         .target(
             name: "OMSDK",
             dependencies: ["OMSDKFramework"],
+            publicHeadersPath: "include",
+            cSettings: [
+                .define("SDUI_INTERNAL")
+            ],
             swiftSettings: [
-                .define("SWIFT_PACKAGE")
+                .define("SWIFT_PACKAGE"),
+                .define("SDUI_INTERNAL")
             ]
         )
     ]

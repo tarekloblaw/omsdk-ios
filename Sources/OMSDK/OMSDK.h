@@ -8,8 +8,9 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 
-// Import the OMSDK framework directly
-@import OMSDK_Loblawca;
+#ifdef SDUI_INTERNAL
+#import "OMIDImports.h"
+#endif
 
 //! Project version number for OMSDK.
 FOUNDATION_EXPORT double OMSDKVersionNumber;

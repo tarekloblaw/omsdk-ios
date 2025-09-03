@@ -1,4 +1,0 @@
-module OMSDK_Loblawca {
-    header "Headers/OMIDImports.h"
-    export *
-}

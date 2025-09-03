@@ -2,4 +2,6 @@ module OMSDK {
     umbrella header "OMSDK.h"
     export *
     module * { export * }
+    
+    link "AppVerificationLibrary"
 }
