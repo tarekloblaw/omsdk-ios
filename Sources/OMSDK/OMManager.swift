@@ -1,7 +1,5 @@
 import Foundation
-#if canImport(UIKit)
 import UIKit
-#endif
 import OMSDK_Loblawca
 
 public final class OMIDSessionManager {
