@@ -21,6 +21,9 @@ let package = Package(
         .target(
             name: "OMSDK",
             dependencies: ["OMSDK_Loblawca"],
+            resources: [
+                .copy("omsdk-v1.js")
+            ],
             swiftSettings: [
                 .define("SWIFT_PACKAGE"),
                 .define("SDUI_INTERNAL")

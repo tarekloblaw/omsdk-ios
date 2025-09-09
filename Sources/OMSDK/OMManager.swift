@@ -73,6 +73,7 @@ public final class OMIDSessionManager {
 
             NSLog("@@ Session state after start - mainAdView: \(session.mainAdView != nil ? "set" : "nil")")
             NSLog("@@ Session configuration - creativeType: \(configuration.creativeType), impressionType: \(configuration.impressionType)")
+
         } catch {
             NSLog("@@ session failed to start: \(error)")
         }
@@ -178,21 +179,16 @@ final class OMIDPartnerCache {
 
     lazy var partner: OMIDLoblawcaPartner = {
         let version = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1.0"
-        return OMIDLoblawcaPartner(name: "ConsumerApp", versionString: version)!
+        return OMIDLoblawcaPartner(name: "Loblaw", versionString: version)!
     }()
 
     var omidJSService: String {
-        if let omidServiceUrl = Bundle.main.url(forResource: "omsdk-v1", withExtension: "js"),
-           let jsContent = try? String(contentsOf: omidServiceUrl) {
-            return jsContent
+        guard let url = Bundle.module.url(forResource: "omsdk-v1", withExtension: "js"),
+              let jsContent = try? String(contentsOf: url) else {
+            fatalError("omsdk-v1.js not found in package resources")
         }
-        
-        return """
-        (function() {
-            window.omid3p = window.omid3p || {};
-        })();
-        """
+
+        print("@@ OMSDK JS loaded from package: \(url.lastPathComponent), length: \(jsContent.count)")
+        return jsContent
     }
 }
-
-
