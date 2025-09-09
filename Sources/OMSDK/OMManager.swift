@@ -1,6 +1,6 @@
 import Foundation
 import UIKit
-import OMSDK_Loblawca
+internal import OMSDK_Loblawca
 
 public final class OMIDSessionManager {
 
@@ -180,12 +180,6 @@ public final class OMIDSessionManager {
             return nil
         }
     }
-
-    private func omsdkLog(_ message: String) {
-        #if DEBUG
-        print("@@ \(message)")
-        #endif
-    }
 }
 
 // MARK: - Partner and JS service cache
@@ -203,11 +197,19 @@ final class OMIDPartnerCache {
     var omidJSService: String {
         guard let url = Bundle.module.url(forResource: "omsdk-v1", withExtension: "js"),
               let jsContent = try? String(contentsOf: url) else {
-            print("@@ omsdk-v1.js not found")
+            omsdkLog("omsdk-v1.js not found")
             return ""
         }
 
-        print("@@ OMSDK JS loaded from package: \(url.lastPathComponent), length: \(jsContent.count)")
+        omsdkLog("OMSDK JS loaded from package: \(url.lastPathComponent), length: \(jsContent.count)")
         return jsContent
     }
+}
+
+// MARK: - Debug Printing
+
+private func omsdkLog(_ message: String) {
+    #if DEBUG
+    print("@@ \(message)")
+    #endif
 }
