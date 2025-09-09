@@ -1,8 +1,11 @@
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 import OMSDK_Loblawca
 
 public final class OMIDSessionManager {
+
     public enum CreativeKind {
         case nativeDisplay
         case nativeVideo
@@ -22,27 +25,30 @@ public final class OMIDSessionManager {
     }
 
     public func startSession(vendorKey: String, verificationScriptURL: String, verificationParameters: String) {
-        NSLog("@@ Starting session with vendorKey: \(vendorKey), scriptURL: \(verificationScriptURL), params: \(verificationParameters)")
+        omsdkLog("Starting session with vendorKey: \(vendorKey), scriptURL: \(verificationScriptURL), params: \(verificationParameters)")
 
         if !OMIDLoblawcaSDK.shared.isActive {
             OMIDLoblawcaSDK.shared.activate()
         }
 
         guard OMIDLoblawcaSDK.shared.isActive else {
-            NSLog("@@ OMSDK not active, cannot start session")
+            omsdkLog("OMSDK not active, cannot start session")
             return
         }
 
-        NSLog("@@ About to create AdSessionContext")
+        omsdkLog("About to create AdSessionContext")
 
         guard let context = createAdSessionContext(vendorKey: vendorKey,
                                                    verificationScriptURL: verificationScriptURL,
                                                    verificationParameters: verificationParameters) else {
-            NSLog("@@ Failed to create AdSessionContext")
+            omsdkLog("Failed to create AdSessionContext")
             return
         }
 
-        let configuration = createAdSessionConfiguration()
+        guard let configuration = createAdSessionConfiguration() else {
+            omsdkLog("Failed to create AdSessionConfiguration")
+            return
+        }
 
         do {
             let session = try OMIDLoblawcaAdSession(configuration: configuration, adSessionContext: context)
@@ -53,87 +59,92 @@ public final class OMIDSessionManager {
 
             do {
                 adEvents = try OMIDLoblawcaAdEvents(adSession: session)
-                NSLog("@@ adEvents created successfully")
+                omsdkLog("adEvents created successfully")
             } catch {
-                NSLog("@@ adEvents creation failed: \(error)")
+                omsdkLog("adEvents creation failed: \(error)")
             }
 
             if creativeKind == .nativeVideo || creativeKind == .nativeAudio {
                 do {
                     mediaEvents = try OMIDLoblawcaMediaEvents(adSession: session)
-                    NSLog("@@ mediaEvents created successfully")
+                    omsdkLog("mediaEvents created successfully")
                 } catch {
-                    NSLog("@@ mediaEvents creation failed: \(error)")
+                    omsdkLog("mediaEvents creation failed: \(error)")
                 }
             }
 
-            NSLog("@@ starting session")
+            omsdkLog("starting session")
             session.start()
-            NSLog("@@ session started")
+            omsdkLog("session started")
 
-            NSLog("@@ Session state after start - mainAdView: \(session.mainAdView != nil ? "set" : "nil")")
-            NSLog("@@ Session configuration - creativeType: \(configuration.creativeType), impressionType: \(configuration.impressionType)")
+            omsdkLog("Session state after start - mainAdView: \(session.mainAdView != nil ? "set" : "nil")")
+            omsdkLog("Session configuration - creativeType: \(configuration.creativeType), impressionType: \(configuration.impressionType)")
 
         } catch {
-            NSLog("@@ session failed to start: \(error)")
+            omsdkLog("session failed to start: \(error)")
         }
     }
 
     public func fireAdLoaded() {
-        NSLog("@@ ad loaded")
+        omsdkLog("ad loaded")
         try? adEvents?.loaded()
     }
 
     public func fireImpression() {
-        NSLog("@@ impressionOccured")
+        omsdkLog("impressionOccured")
 
         guard let adEvents = adEvents else {
-            NSLog("@@ impressionOccured failed: adEvents is nil")
+            omsdkLog("impressionOccurred failed: adEvents is nil")
             return
         }
 
         do {
             try adEvents.impressionOccurred()
-            NSLog("@@ impressionOccurred called successfully")
+            omsdkLog("impressionOccurred called successfully")
         } catch {
-            NSLog("@@ impressionOccured failed: \(error)")
+            NSLog("impressionOccured failed: \(error)")
         }
     }
 
     public func finish() {
-        NSLog("@@ finish")
+        omsdkLog("finish")
         adSession?.finish()
         adSession = nil
         adEvents = nil
         mediaEvents = nil
     }
 
-    private func createAdSessionConfiguration() -> OMIDLoblawcaAdSessionConfiguration {
-        switch creativeKind {
-        case .nativeDisplay:
-            return try! OMIDLoblawcaAdSessionConfiguration(
-                creativeType: .nativeDisplay,
-                impressionType: .viewable,
-                impressionOwner: .nativeOwner,
-                mediaEventsOwner: .noneOwner,
-                isolateVerificationScripts: true
-            )
-        case .nativeVideo:
-            return try! OMIDLoblawcaAdSessionConfiguration(
-                creativeType: .video,
-                impressionType: .beginToRender,
-                impressionOwner: .nativeOwner,
-                mediaEventsOwner: .nativeOwner,
-                isolateVerificationScripts: false
-            )
-        case .nativeAudio:
-            return try! OMIDLoblawcaAdSessionConfiguration(
-                creativeType: .audio,
-                impressionType: .audible,
-                impressionOwner: .nativeOwner,
-                mediaEventsOwner: .nativeOwner,
-                isolateVerificationScripts: false
-            )
+    private func createAdSessionConfiguration() -> OMIDLoblawcaAdSessionConfiguration? {
+        do {
+            switch creativeKind {
+            case .nativeDisplay:
+                return try OMIDLoblawcaAdSessionConfiguration(
+                    creativeType: .nativeDisplay,
+                    impressionType: .viewable,
+                    impressionOwner: .nativeOwner,
+                    mediaEventsOwner: .noneOwner,
+                    isolateVerificationScripts: true
+                )
+            case .nativeVideo:
+                return try OMIDLoblawcaAdSessionConfiguration(
+                    creativeType: .video,
+                    impressionType: .beginToRender,
+                    impressionOwner: .nativeOwner,
+                    mediaEventsOwner: .nativeOwner,
+                    isolateVerificationScripts: false
+                )
+            case .nativeAudio:
+                return try OMIDLoblawcaAdSessionConfiguration(
+                    creativeType: .audio,
+                    impressionType: .audible,
+                    impressionOwner: .nativeOwner,
+                    mediaEventsOwner: .nativeOwner,
+                    isolateVerificationScripts: false
+                )
+            }
+        } catch {
+            omsdkLog("Failed to create AdSessionConfiguration: \(error)")
+            return nil
         }
     }
 
@@ -143,15 +154,18 @@ public final class OMIDSessionManager {
         var resources: [OMIDLoblawcaVerificationScriptResource] = []
 
         guard let scriptURL = URL(string: verificationScriptURL) else {
-            NSLog("@@ Failed to create verification resource: Invalid URL")
+            omsdkLog("Failed to create verification resource: Invalid URL")
             return nil
         }
 
-        let resource = OMIDLoblawcaVerificationScriptResource(url: scriptURL,
-                                                              vendorKey: vendorKey,
-                                                              parameters: verificationParameters)
-        resources.append(resource!)
-        NSLog("@@ Resource created and appended")
+        guard let resource = OMIDLoblawcaVerificationScriptResource(url: scriptURL,
+                                                                    vendorKey: vendorKey,
+                                                                    parameters: verificationParameters) else {
+            omsdkLog("Failed to create verification script resource")
+            return nil
+        }
+        resources.append(resource)
+        omsdkLog("Resource created and appended")
 
         do {
             let context = try OMIDLoblawcaAdSessionContext(
@@ -161,12 +175,18 @@ public final class OMIDSessionManager {
                 contentUrl: nil,
                 customReferenceIdentifier: nil
             )
-            NSLog("@@ AdSessionContext created successfully with \(resources.count) verification resources")
+            omsdkLog("AdSessionContext created successfully with \(resources.count) verification resources")
             return context
         } catch {
-            NSLog("@@ Failed to create AdSessionContext: \(error)")
+            omsdkLog("Failed to create AdSessionContext: \(error)")
             return nil
         }
+    }
+
+    private func omsdkLog(_ message: String) {
+        #if DEBUG
+        print("@@ \(message)")
+        #endif
     }
 }
 
@@ -179,13 +199,14 @@ final class OMIDPartnerCache {
 
     lazy var partner: OMIDLoblawcaPartner = {
         let version = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1.0"
-        return OMIDLoblawcaPartner(name: "Loblaw", versionString: version)!
+        return OMIDLoblawcaPartner(name: "loblawca", versionString: version)!
     }()
 
     var omidJSService: String {
         guard let url = Bundle.module.url(forResource: "omsdk-v1", withExtension: "js"),
               let jsContent = try? String(contentsOf: url) else {
-            fatalError("omsdk-v1.js not found in package resources")
+            print("@@ omsdk-v1.js not found")
+            return ""
         }
 
         print("@@ OMSDK JS loaded from package: \(url.lastPathComponent), length: \(jsContent.count)")
