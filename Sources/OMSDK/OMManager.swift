@@ -50,7 +50,7 @@ public final class OMIDSessionManager {
 
         do {
             let session = try OMIDLoblawcaAdSession(configuration: configuration, adSessionContext: context)
-            if creativeKind != .nativeAudio, let adView = mainAdView {
+            if creativeKind == .nativeDisplay, let adView = mainAdView {
                 session.mainAdView = adView
             }
             adSession = session
@@ -62,18 +62,15 @@ public final class OMIDSessionManager {
                 omsdkLog("adEvents creation failed: \(error)")
             }
 
-            if creativeKind == .nativeVideo || creativeKind == .nativeAudio {
-                do {
-                    mediaEvents = try OMIDLoblawcaMediaEvents(adSession: session)
-                    omsdkLog("mediaEvents created successfully")
-                } catch {
-                    omsdkLog("mediaEvents creation failed: \(error)")
-                }
+            do {
+                mediaEvents = try OMIDLoblawcaMediaEvents(adSession: session)
+                omsdkLog("mediaEvents created successfully")
+            } catch {
+                omsdkLog("mediaEvents creation failed: \(error)")
             }
 
             omsdkLog("starting session")
             session.start()
-            omsdkLog("session started")
 
             omsdkLog("Session state after start - mainAdView: \(session.mainAdView != nil ? "set" : "nil")")
             omsdkLog("Session configuration - creativeType: \(configuration.creativeType), impressionType: \(configuration.impressionType)")
